@@ -1,0 +1,21 @@
+{
+  "name": "hart-ecosys-scrapper",
+  "version": "1.0.0",
+  "description": "TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "scrape-ios": "node store-scraper.js --store=appstore",
+    "scrape-android": "node store-scraper.js --store=gpstore"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "app-store-scraper": "^0.18.0",
+    "csv-writer": "^1.6.0",
+    "google-play-scraper": "^10.0.1",
+    "minimist": "^1.2.8"
+  }
+}
