@@ -1,6 +1,6 @@
 import minimist from 'minimist';
 import appstore from 'app-store-scraper';
-import gpstore from 'google-play-scraper';
+import gpstore from "google-play-scraper";
 import { createObjectCsvWriter } from 'csv-writer';
 
 const args = minimist(process.argv.slice(2));
@@ -8,6 +8,7 @@ const args = minimist(process.argv.slice(2));
 let appstoreList = [];
 let gpstoreList = [];
 let seenAppIds = new Set();
+let androidSeenAppIds = new Set();
 
 const MAX_RETRIES = 2;
 const MAX_HITS_PER_SEARCH = 30;
@@ -47,6 +48,7 @@ const csvWriterInstance = csvWriter({
         { id: 'currency', title: 'Currency' },
         { id: 'developer', title: 'Developer' },
         { id: 'developerUrl', title: 'Developer URL' },
+        { id: 'developerWebsite', title: 'Developer Website' },
         { id: 'score', title: 'Score' },
         { id: 'reviews', title: 'Reviews' }
     ]
@@ -94,11 +96,12 @@ async function scrapeAppstore() {
 
                 for (const appInfo of apps) {
                     const appId = appInfo.id;
+                    console.log(`Processing app '${appId}'...`);
                     if (!seenAppIds.has(appId)) {
                         seenAppIds.add(appId);
                         try {
                             const appDetails = await appstore.app({ id: appId, country: 'us', lang: 'en' });
-
+                            console.log(`App details for '${appId}':`, appDetails);
                             const result = {
                                 id: appDetails.id,
                                 appId: appDetails.appId,
@@ -118,6 +121,7 @@ async function scrapeAppstore() {
                                 currency: appDetails.currency,
                                 developer: appDetails.developer,
                                 developerUrl: appDetails.developerUrl,
+                                developerWebsite: appDetails.developerWebsite,
                                 score: appDetails.score,
                                 reviews: appDetails.reviews,
                                 supportedDevices: appDetails.supportedDevices
@@ -164,17 +168,17 @@ async function scrapeGPstore() {
 
                 for (const appInfo of apps) {
                     const appId = appInfo.appId;
-                    if (!seenAppIds.has(appId)) {
-                        seenAppIds.add(appId);
+                    if (!androidSeenAppIds.has(appId)) {
+                        androidSeenAppIds.add(appId);
                         try {
-                            const appDetails = await gpstore.app({ id: appId, country: 'us', lang: 'en' });
+                            const appDetails = await gpstore.app({appId: appId});
 
                             const result = {
                                 appId: appDetails.appId,
                                 title: appDetails.title,
                                 url: appDetails.url,
                                 description: appDetails.description,
-                                genres: appDetails.categories.map(categroy => category.name).join(', '),
+                                genres: appDetails.categories.map(category => category.name).join(', '),
                                 contentRating: appDetails.contentRating,
                                 released: appDetails.released,
                                 updated: appDetails.updated,
