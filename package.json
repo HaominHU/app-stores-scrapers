@@ -15,7 +15,7 @@
   "dependencies": {
     "app-store-scraper": "^0.18.0",
     "csv-writer": "^1.6.0",
-    "google-play-scraper": "^10.0.1",
+    "google-play-scraper": "^10.1.2",
     "minimist": "^1.2.8"
   }
 }

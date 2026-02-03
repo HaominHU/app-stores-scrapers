@@ -1,6 +1,6 @@
 import minimist from 'minimist';
 import appstore from 'app-store-scraper';
-import gpstore from "google-play-scraper";
+import gpplay from "google-play-scraper";
 import { createObjectCsvWriter } from 'csv-writer';
 
 const args = minimist(process.argv.slice(2));
@@ -162,7 +162,7 @@ async function scrapeGPstore() {
                 console.warn(`Waiting for ${delayTime / 1000} seconds before the next request for '${keyword}'...`);
                 await delay(delayTime);
 
-                const apps = await gpstore.search({
+                const apps = await gpplay.search({
                     term: keyword
                 });
 
@@ -171,7 +171,7 @@ async function scrapeGPstore() {
                     if (!androidSeenAppIds.has(appId)) {
                         androidSeenAppIds.add(appId);
                         try {
-                            const appDetails = await gpstore.app({appId: appId});
+                            const appDetails = await gpplay.app({appId: appId});
 
                             const result = {
                                 appId: appDetails.appId,
