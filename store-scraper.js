@@ -83,6 +83,7 @@ async function scrapeAppstore() {
     for (const keyword of keywords) {
         let retries = 0;
         let success = false;
+        let duplicateCount = 0;
 
         while (retries < MAX_RETRIES && !success) {
             try {
@@ -133,9 +134,13 @@ async function scrapeAppstore() {
                             console.error(`Error fetching details for app '${appId}':`, error);
                         }
                     } else {
+                        duplicateCount += 1;
                         console.log(`App '${appId}' already processed. Skipping...`);
                     }
                 }
+                console.info(`Total inital apps fetched for keyword '${keyword}': ${apps.length}`);
+                console.info(`Total duplicate apps with the same appID skipped: ${duplicateCount} with keyword '${keyword}'`);
+
                 success = true;
             } catch (error) {
                 retries += 1;
@@ -155,6 +160,7 @@ async function scrapeGPstore() {
     for (const keyword of keywords) {
         let retries = 0;
         let success = false;
+        let duplicateCount = 0;
 
         while (retries < MAX_RETRIES && !success) {
             try {
@@ -199,9 +205,12 @@ async function scrapeGPstore() {
                             console.error(`Error fetching details for app '${appId}':`, error);
                         }
                     } else {
+                        duplicateCount += 1;
                         console.log(`App '${appId}' already processed. Skipping...`);
                     }
                 }
+                console.info(`Total inital apps fetched for keyword '${keyword}': ${apps.length}`);
+                console.info(`Total duplicate apps with the same appID skipped: ${duplicateCount} with keyword '${keyword}'`);
                 success = true;
             } catch (error) {
                 retries += 1;
