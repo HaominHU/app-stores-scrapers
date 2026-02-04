@@ -1,6 +1,6 @@
 import minimist from 'minimist';
 import appstore from 'app-store-scraper';
-import gpplay from "google-play-scraper";
+import gplay from "google-play-scraper";
 import { createObjectCsvWriter } from 'csv-writer';
 
 const args = minimist(process.argv.slice(2));
@@ -171,7 +171,7 @@ async function scrapeGPstore() {
                     if (!androidSeenAppIds.has(appId)) {
                         androidSeenAppIds.add(appId);
                         try {
-                            const appDetails = await gpplay.app({appId: appId});
+                            const appDetails = await gplay.app({appId: appId});
 
                             const result = {
                                 appId: appDetails.appId,
