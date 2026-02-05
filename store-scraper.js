@@ -7,28 +7,42 @@ const args = minimist(process.argv.slice(2));
 
 let appstoreList = [];
 let gpstoreList = [];
+let appstoreTotalRecords = {};
+let gpstoreTotalRecords = {};
+let appstoreDuplicateRecords = {};
+let gpstoreDuplicateRecords = {};
 let seenAppIds = new Set();
 let androidSeenAppIds = new Set();
 
 const MAX_RETRIES = 2;
-const MAX_HITS_PER_SEARCH = 30;
+const MAX_HITS_PER_SEARCH = 200;
 
+// topic placeholder for file output
+const topic = "med_app_search"
+
+// keywords placeholder for search
 const keywords = [
-    "Aging",
-    "Alzheimers",
-    "Cognitive Stimulation",
-    "Dementia Caregiver",
-    "Dementia",
-    "Healthy Aging",
-    "Healthy Brain",
-    "Medication Management"
+    // "Aging",
+    // "Alzheimers",
+    // "Cognitive Stimulation",
+    // "Dementia Caregiver",
+    // "Dementia",
+    // "Healthy Aging",
+    // "Healthy Brain",
+    // "Medication Management"
+    "medication health monitor",
+    "medication management",
+    "pill reminder",
+    "medication helper"
 ];
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const csvWriter = createObjectCsvWriter;
 const csvWriterInstance = csvWriter({
-    path: './output/app_store_apps.csv',
+    // path: './output/app_store_apps.csv',
+    //output with timestamp and topic
+    path: `./output/app_store_apps_${topic}_${Date.now()}.csv`,
     header: [
         { id: 'id', title: 'ID' },
         { id: 'appId', title: 'App ID' },
@@ -55,7 +69,8 @@ const csvWriterInstance = csvWriter({
 });
 
 const gpstoreCSVWriterInstance = csvWriter({
-    path: './output/google_play_apps.csv',
+    // path: './output/google_play_apps.csv',
+    path: `./output/google_play_apps_${topic}_${Date.now()}.csv`,
     header: [
         { id: 'appId', title: 'ID' },
         { id: 'title', title: 'Title' },
@@ -84,7 +99,6 @@ async function scrapeAppstore() {
         let retries = 0;
         let success = false;
         let duplicateCount = 0;
-
         while (retries < MAX_RETRIES && !success) {
             try {
                 const delayTime = Math.random() * 10000 + 5000;
@@ -92,7 +106,8 @@ async function scrapeAppstore() {
                 await delay(delayTime);
 
                 const apps = await appstore.search({
-                    term: keyword
+                    term: keyword,
+                    num: MAX_HITS_PER_SEARCH,
                 });
 
                 for (const appInfo of apps) {
@@ -138,9 +153,8 @@ async function scrapeAppstore() {
                         console.log(`App '${appId}' already processed. Skipping...`);
                     }
                 }
-                console.info(`Total inital apps fetched for keyword '${keyword}': ${apps.length}`);
-                console.info(`Total duplicate apps with the same appID skipped: ${duplicateCount} with keyword '${keyword}'`);
-
+                appstoreTotalRecords[keyword] = apps.length;
+                appstoreDuplicateRecords[keyword] = duplicateCount;
                 success = true;
             } catch (error) {
                 retries += 1;
@@ -154,6 +168,10 @@ async function scrapeAppstore() {
 
     await csvWriterInstance.writeRecords(appstoreList);
     console.info("Results saved to 'app_store_apps.csv'");
+    for (const keyword of keywords) {
+        console.info(`Total initial apps fetched for keyword '${keyword}': ${appstoreTotalRecords[keyword]}`);
+        console.info(`Total duplicate apps with the same appID skipped: ${appstoreDuplicateRecords[keyword]} with keyword '${keyword}'`);
+    }
 }
 
 async function scrapeGPstore() {
@@ -168,8 +186,9 @@ async function scrapeGPstore() {
                 console.warn(`Waiting for ${delayTime / 1000} seconds before the next request for '${keyword}'...`);
                 await delay(delayTime);
 
-                const apps = await gpplay.search({
-                    term: keyword
+                const apps = await gplay.search({
+                    term: keyword,
+                    num: MAX_HITS_PER_SEARCH,
                 });
 
                 for (const appInfo of apps) {
@@ -209,8 +228,8 @@ async function scrapeGPstore() {
                         console.log(`App '${appId}' already processed. Skipping...`);
                     }
                 }
-                console.info(`Total inital apps fetched for keyword '${keyword}': ${apps.length}`);
-                console.info(`Total duplicate apps with the same appID skipped: ${duplicateCount} with keyword '${keyword}'`);
+                gpstoreTotalRecords[keyword] = apps.length;
+                gpstoreDuplicateRecords[keyword] = duplicateCount;
                 success = true;
             } catch (error) {
                 retries += 1;
@@ -222,6 +241,10 @@ async function scrapeGPstore() {
         }
     }
 
+    for (const keyword of keywords) {
+        console.info(`Total initial apps fetched for keyword '${keyword}': ${gpstoreTotalRecords[keyword]}`);
+        console.info(`Total duplicate apps with the same appID skipped: ${gpstoreDuplicateRecords[keyword]} with keyword '${keyword}'`);
+    }
     await gpstoreCSVWriterInstance.writeRecords(gpstoreList);
     console.info("Results saved to 'gp_store_apps.csv'");
 }
