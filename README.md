@@ -23,7 +23,7 @@ This scraper is part of the HART ecosystem, designed to collect and synchronize 
 - 📱 Scrape iOS apps from the Apple App Store
 - 🤖 Scrape Android apps from the Google Play Store
 - 🔄 Separate scraping processes for each platform
-- 🔗 Integration with HART backend
+- 🔗 Integration with a JS based backend
 
 ## Prerequisites
 
@@ -71,10 +71,10 @@ npm run scrape-ios && npm run scrape-android
 
 ## Important Notes
 
-⚠️ **Polyfill Issue**: Due to polyfill compatibility issues with Angular, the scraping workflow must follow this specific order:
+⚠️ **Polyfill Issue**: Due to polyfill compatibility issues with Angular, the scraping workflow must follow this specific order if you are using the Angular frontend:
 
 1. Run the scraper (iOS and/or Android)
-2. Synchronize the results with the HART backend
+2. Synchronize the results with the backend
 3. Run the Angular application
 
 Running these steps out of order may cause compatibility issues.
@@ -82,7 +82,7 @@ Running these steps out of order may cause compatibility issues.
 ## Project Structure
 
 ```
-hart-ecosys-scrapper/
+app-stores-scrapper/
 ├── src/              # Source files
 ├── data/             # Scraped data output (if applicable)
 ├── package.json      # Project dependencies and scripts
