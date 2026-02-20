@@ -1,4 +1,4 @@
-# HART Ecosystem Scraper
+# App Stores Ecosystem Scraper
 
 > A JavaScript scraper for collecting iOS and Android app data from the App Store and Google Play Store.
 
