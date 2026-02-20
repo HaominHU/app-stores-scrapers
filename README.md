@@ -98,8 +98,9 @@ This project builds upon the following open-source libraries:
 
 ## License
 
-[Specify your license here]
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
 **Note**: This scraper is intended for educational and research purposes. Please ensure you comply with the App Store and Google Play Store terms of service when using this tool.
+
