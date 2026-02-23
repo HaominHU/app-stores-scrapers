@@ -16,7 +16,7 @@
 
 ## About
 
-This scraper is part of the HART ecosystem, designed to collect and synchronize mobile application data from both major app stores. The data is then integrated with the HART backend for further processing and analysis.
+This scraper is a wrapped mHealth app scrapper designed to collect and synchronize mHealth app market data from both major app stores. The scraper is designed to connect with a JS-based backend. For research purpose only at the moment.
 
 ## Features
 
@@ -37,7 +37,7 @@ Before you begin, ensure you have the following installed:
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd hart-ecosys-scrapper
+cd /path/to/your/app-stores-scrapper
 ```
 
 2. Install dependencies:
@@ -103,4 +103,3 @@ This project builds upon the following open-source libraries:
 ---
 
 **Note**: This scraper is intended for educational and research purposes. Please ensure you comply with the App Store and Google Play Store terms of service when using this tool.
-
