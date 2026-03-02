@@ -18,22 +18,33 @@ const MAX_RETRIES = 2;
 const MAX_HITS_PER_SEARCH = 200;
 
 // topic placeholder for file output
-const topic = "med_app_search"
+const topic = "hart_semi_annual_search";
+// const topic = "med_app_search";
 
 // keywords placeholder for search
 const keywords = [
-    // "Aging",
-    // "Alzheimers",
-    // "Cognitive Stimulation",
-    // "Dementia Caregiver",
-    // "Dementia",
+    /*HART semi-annual search*/
+    "Aging",
+    "Alzheimers",
+    "Cognitive Stimulation",
+    "Dementia Caregiver",
+    "Dementia",
     // "Healthy Aging",
     // "Healthy Brain",
-    // "Medication Management"
-    "medication health monitor",
-    "medication management",
-    "pill reminder",
-    "medication helper"
+    // "Medication Management",
+    // “Behavior tracking”,
+    // “Symptom Tracking”,
+    // "Senior Nutrition”,
+    // "Malnutrition”,
+    // “Memory games”,
+    // “Care Coordination”.
+
+    /* Medication Management App terms*/
+    // *"medication health monitor",
+    // *"medication management",
+    // *"pill reminder",
+    // *"medication helper"
+
 ];
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
