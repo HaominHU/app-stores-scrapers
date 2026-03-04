@@ -24,20 +24,20 @@ const topic = "hart_semi_annual_search";
 // keywords placeholder for search
 const keywords = [
     /*HART semi-annual search*/
-    "Aging",
-    "Alzheimers",
-    "Cognitive Stimulation",
-    "Dementia Caregiver",
-    "Dementia",
+    // "Aging",
+    // "Alzheimers",
+    // "Cognitive Stimulation",
+    // "Dementia Caregiver",
+    // "Dementia",
     // "Healthy Aging",
     // "Healthy Brain",
     // "Medication Management",
-    // “Behavior tracking”,
-    // “Symptom Tracking”,
-    // "Senior Nutrition”,
-    // "Malnutrition”,
-    // “Memory games”,
-    // “Care Coordination”.
+    // "Behavior tracking",
+    // "Symptom Tracking",
+    "Senior Nutrition",
+    "Malnutrition",
+    "Memory games",
+    "Care Coordination"
 
     /* Medication Management App terms*/
     // *"medication health monitor",
@@ -177,12 +177,12 @@ async function scrapeAppstore() {
         }
     }
 
-    await csvWriterInstance.writeRecords(appstoreList);
-    console.info("Results saved to 'app_store_apps.csv'");
     for (const keyword of keywords) {
         console.info(`Total initial apps fetched for keyword '${keyword}': ${appstoreTotalRecords[keyword]}`);
         console.info(`Total duplicate apps with the same appID skipped: ${appstoreDuplicateRecords[keyword]} with keyword '${keyword}'`);
     }
+    await csvWriterInstance.writeRecords(appstoreList);
+    console.info("Results saved to 'app_store_apps.csv'");
 }
 
 async function scrapeGPstore() {
