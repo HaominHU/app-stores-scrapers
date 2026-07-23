@@ -82,9 +82,9 @@ Running these steps out of order may cause compatibility issues.
 ## Project Structure
 
 ```
-app-stores-scrapper/
-├── src/              # Source files
-├── data/             # Scraped data output (if applicable)
+hart-ecosys-scrapper/
+├── store-scraper.js  # Scraper entry point (iOS + Android, selected via --store flag)
+├── output/           # Scraped data output (timestamped CSVs)
 ├── package.json      # Project dependencies and scripts
 └── README.md         # Project documentation
 ```

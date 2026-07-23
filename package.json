@@ -11,7 +11,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "app-store-scraper": "^0.18.0",
     "csv-writer": "^1.6.0",
