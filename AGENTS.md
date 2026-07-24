@@ -23,10 +23,10 @@ Follow, in this order of specificity:
 
 ## Workflow rule: TODO before action
 
-Before making any change: state a short TODO (what you're about to do and why) and wait for
-explicit user confirmation. Only act after confirmation. This applies per batch (see below),
-not just at the start of a session — new information or a change of plan mid-session means a
-new TODO and a new confirmation.
+Before making any change: state a short TODO (what you're about to do and why), write it to
+`TODO.md` (see below), and wait for explicit user confirmation. Only act after confirmation.
+This applies per batch (see below), not just at the start of a session — new information or
+a change of plan mid-session means a new TODO and a new confirmation.
 
 If a requirement is ambiguous, ask rather than guessing (see rule 2 above).
 
@@ -60,18 +60,33 @@ Follow: https://gist.github.com/HaominHU/91de2458e880d217a59d1c5fd95e77c9
 Note: commits already in this repo's history predate this convention — don't rewrite them,
 just apply this format going forward.
 
-## Activity log
+## Activity log and current state
 
-`AGENTS_LOG.md` (repo root, git-tracked) records batch-level activity so any agent picking
-up this repo later — or the user — can see what happened without re-deriving it. Log
-entries, not tool-call noise: one entry per batch, covering what changed, why, and the
-commit/push outcome. Append, don't rewrite history in it.
+Two files, two different jobs — both repo-root, both git-tracked so any agent or session
+picking this repo up has the full picture, not just whoever's local machine:
+
+- **`AGENTS_LOG.md`** — retrospective, append-only. One entry per *completed* batch: what
+  changed, why, commit/push outcome. Log entries, not tool-call noise. Never rewrite past
+  entries.
+- **`TODO.md`** — current state, mutable. What's done, what's in progress, what's next, and
+  any locked-in design decisions for a multi-batch feature (so a re-derivation isn't needed
+  after an interrupted session or a handoff to a different agent). Update it before starting
+  a batch (per the TODO-before-action rule above) and again the moment a batch completes or
+  the plan changes — it should always reflect where things actually stand right now, not
+  where they stood at the start of the session.
 
 ## Context/compaction
 
 Long sessions degrade output quality as context fills up. This is a reminder for the agent
 to proactively suggest the user run `/compact` during long sessions — not something to
 automate via a hook.
+
+## Keep package.json and README.md reproducible
+
+Whenever a change adds, removes, or alters an `npm run` command or any other CLI usage,
+update `package.json`'s `scripts` and README.md's `Usage` section in the same batch — not
+as a follow-up. The README must always be enough on its own for someone to reproduce the
+current commands; don't let it drift from what the scripts actually do.
 
 ## TODOs in code
 
