@@ -55,17 +55,17 @@ output, then move on to the next group.
 ### Scrape iOS Apps
 
 ```bash
-npm run scrape-ios-group1
-npm run scrape-ios-group2
-npm run scrape-ios-group3
+npm run scrape -- --store=appstore --group=1
+npm run scrape -- --store=appstore --group=2
+npm run scrape -- --store=appstore --group=3
 ```
 
 ### Scrape Android Apps
 
 ```bash
-npm run scrape-android-group1
-npm run scrape-android-group2
-npm run scrape-android-group3
+npm run scrape -- --store=gpstore --group=1
+npm run scrape -- --store=gpstore --group=2
+npm run scrape -- --store=gpstore --group=3
 ```
 
 Each run writes two files to `output/`, named
