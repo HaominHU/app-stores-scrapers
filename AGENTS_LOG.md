@@ -121,5 +121,41 @@ prior half-year cycle from a new cycle's results, and (2) stop manually copy-pas
 per-keyword terminal output into a Word doc. Design fully negotiated in conversation and
 recorded in `TODO.md` before this batch started.
 
-**Commit/push:** not yet committed — pending user confirmation. Not yet tested against a
-real scrape (only fixture data) — user's next step is to run it for real.
+**Commit/push:** committed (`20d3143`, `45b4955`) and pushed, per user confirmation.
+
+---
+
+## 2026-07-24 — fix google-play-scraper search() bug, dependency/logic health check
+
+**What:**
+- User ran the real pipeline: all 3 App Store groups succeeded; Google Play group 1
+  returned 0 apps for every keyword, twice.
+- Diagnosed by isolating endpoints on the installed `google-play-scraper@10.1.2`: `search()`
+  returned an empty array with no thrown error, while `app()` (direct lookup by known appId)
+  and `list()` (top-apps listing) both worked. That pointed at a bug specific to `search()`'s
+  page parsing rather than a network/account block, since the other two scrape different
+  Play Store pages successfully. Confirmed the user's earlier `seenAppIds` consolidation
+  (see the 2026-07-24 group-based-scraping entry) was not the cause — only one of
+  `scrapeAppstore()`/`scrapeGPstore()` ever runs per process (a fresh `node` invocation each
+  time), so the Set always starts empty regardless of store.
+- Found `google-play-scraper@10.1.3` published after the installed `10.1.2`; tested it
+  (`npm install --no-save`) and confirmed `search()` returns real results again. Bumped
+  `package.json` to `^10.1.3` and ran a real `npm install` to update the lockfile.
+- `store-scraper.js`: added a `recordKeywordOutcome()` helper so a 0-result success (the
+  exact silent-failure shape just diagnosed) logs a warning instead of looking identical to
+  a genuinely empty result, and a keyword that fails all `MAX_RETRIES` attempts is recorded
+  as `'FAILED'` in both the console summary and the JSON log, instead of silently defaulting
+  to `undefined`/`0`.
+- Ran a full dependency/logic health check: `npm audit` (8 findings, all traced to
+  `app-store-scraper@0.18.0`'s deprecated `request`-based dependency chain — already the
+  latest published version, no fix available; declined `npm audit fix --force` since it
+  would downgrade to a much older `0.4.0`), `npm outdated` (clean), `npm ls` (clean, no
+  extraneous/missing packages), grep for stale references left over from earlier refactors
+  (none found), manual review of every import in all 6 project JS files (all used).
+
+**Why:** production use immediately surfaced a real bug in a scraping dependency; root-caused
+it precisely before touching anything, ruled out the user's specific suspicion, fixed the
+actual cause, and used the incident to close a real gap (silent 0-result successes weren't
+distinguishable from genuine empty results anywhere in the pipeline).
+
+**Commit/push:** committed, not yet pushed — pending user confirmation.

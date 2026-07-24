@@ -54,23 +54,42 @@ hand from copy-pasted terminal output.
 
 - [x] **Batch A** — `--group` flag + codified keyword groups, JSON log sidecar, new
       filename convention, `package.json`/README updates, `.gitignore` for `output/` and
-      `last_search/`. **Committed** (`6e4ca91`).
-- [x] **process fix** — `TODO.md` + `AGENTS.md`/`AGENTS_LOG.md` rules. **Committed**
+      `last_search/`. **Committed & pushed** (`6e4ca91`).
+- [x] **process fix** — `TODO.md` + `AGENTS.md`/`AGENTS_LOG.md` rules. **Committed & pushed**
       (`0826491`).
-- [x] **Batch B** — `refine.js`. Implemented, verified end-to-end against fixture data
-      (isolated temp dir, not the real `output/`/`last_search/`). Not yet committed.
-- [x] **Batch C** — `promote.js`. Implemented, verified end-to-end against fixture data.
-      Not yet committed.
-- [x] **Batch D** — `merge-log.js`. Implemented, verified end-to-end against fixture data —
-      confirmed correct paragraph/blank-line structure and exact keyword numbering/content
-      by unzipping the generated `.docx` and inspecting `word/document.xml`. Not yet
-      committed.
+- [x] **Batch B/C/D** — `refine.js`, `promote.js`, `merge-log.js`. **Committed & pushed**
+      (`20d3143`, `45b4955`).
+- [x] **Real-world test** — user ran all 3 App Store groups successfully. Google Play group
+      1 returned 0 apps (twice) — root-caused to a bug in `google-play-scraper@10.1.2`'s
+      `search()` specifically (`app()`/`list()` still worked, isolating it to the search
+      endpoint). Fixed by upgrading to `10.1.3`; verified live (0 → 5 results for a test
+      search). **Committed, not yet pushed.**
+- [x] **Health check** — traced all 8 `npm audit` findings to `app-store-scraper@0.18.0`'s
+      dependency on the deprecated `request` library; that's already the latest published
+      version (no newer fix exists) — see "Known issues" below. No stale references/unused
+      imports from the various refactors; dependency tree clean. Added a `recordKeywordOutcome`
+      helper in `store-scraper.js` so a 0-result success (silent library bug, like the one
+      just found) logs a warning instead of looking identical to a real empty result, and a
+      full-retry failure is recorded as `'FAILED'` instead of blending into `0`/`undefined`.
 
-All 4 batches are implemented and pass fixture-based verification. **Not yet verified
-against a real scrape** (live App Store/Play Store calls weren't triggered — those take
-minutes per group and were out of scope for automated verification).
+The pipeline is now feature-complete and has a real successful run behind it (App Store, all
+3 groups). Google Play is unblocked as of the `google-play-scraper` upgrade but not yet
+re-verified end to end by the user.
+
+### Known issues (accepted risk, not fixed)
+
+- `npm audit`: 8 vulnerabilities (5 moderate, 1 high, 2 critical), all originating from
+  `app-store-scraper@0.18.0`'s use of the deprecated `request` HTTP library (pulls in
+  vulnerable `form-data`/`qs`/`tough-cookie`/`uuid`/`ajv`) and an old `cheerio`→`undici`
+  chain. `app-store-scraper` hasn't published a release since Nov 2023 and 0.18.0 is already
+  the latest — there's no upgrade path that fixes this. `npm audit fix --force` would
+  downgrade to `0.4.0` (much older), which isn't a real fix, so it wasn't applied. Low
+  practical risk here since this tool only makes outbound calls to Apple's own servers, not
+  a network-facing service handling untrusted input — but worth re-checking `npm audit`
+  periodically in case `app-store-scraper` gets an update, or a lower-risk alternative
+  library becomes worth switching to.
 
 ### Immediate next step
 
-Awaiting the user's commit/push decision for Batches B/C/D, and their own real-world test
-run (`npm run scrape-ios-group1` → `refine` → `promote`, then all 3 groups → `merge-log`).
+Push the `google-play-scraper` fix + `recordKeywordOutcome` logic hardening commit, then
+the user re-runs Google Play group 1 to confirm the fix holds against a real scrape.
