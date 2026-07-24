@@ -74,6 +74,43 @@ Each run writes two files to `output/`, named
 - the CSV holds the scraped app records
 - the JSON log holds the per-keyword fetch/duplicate counts for that group
 
+### Refine (exclude apps already seen last cycle)
+
+After scraping a group, compare it against `last_search/` to drop apps already reported in
+a previous cycle. Writes `..._new_only.csv` next to the raw CSV in `output/`; the raw CSV
+is left untouched.
+
+```bash
+npm run refine -- --store=appstore --group=1
+npm run refine -- --store=gpstore --group=1
+```
+
+### Promote (update the last_search baseline)
+
+Once a cycle's results look good, fold this cycle's raw output into `last_search/` so the
+next cycle's `refine` run knows about these apps too. The new baseline is the union of the
+old baseline and this cycle's apps (deduplicated by app ID) — nothing already known is
+ever forgotten, even if an app doesn't show up in every cycle's search results.
+
+```bash
+npm run promote -- --store=appstore --group=1
+npm run promote -- --store=gpstore --group=1
+```
+
+Repeat scrape → refine → promote for groups 2 and 3.
+
+### Merge log (combined results summary)
+
+Once all 3 groups for a store have been scraped, combine their JSON logs into a single
+numbered `.docx` summary (`app_store_results_log.docx` / `google_play_results_log.docx` in
+`output/`), matching the format previously assembled by hand from copy-pasted terminal
+output.
+
+```bash
+npm run merge-log -- --store=appstore
+npm run merge-log -- --store=gpstore
+```
+
 ## Important Notes
 
 ⚠️ **Polyfill Issue**: Due to polyfill compatibility issues with Angular, the scraping workflow must follow this specific order if you are using the Angular frontend:
@@ -88,10 +125,16 @@ Running these steps out of order may cause compatibility issues.
 
 ```
 hart-ecosys-scrapper/
-├── store-scraper.js  # Scraper entry point (iOS + Android, selected via --store flag)
-├── output/           # Scraped data output (timestamped CSVs)
-├── package.json      # Project dependencies and scripts
-└── README.md         # Project documentation
+├── store-scraper.js  # Scraper entry point (iOS + Android, selected via --store/--group flags)
+├── refine.js         # Excludes apps already in last_search from a cycle's output
+├── promote.js        # Folds a cycle's output into the last_search baseline
+├── merge-log.js      # Combines a store's 3 group logs into one .docx summary
+├── csv-schema.js      # Shared CSV column/header definitions and filename helpers
+├── file-lookup.js     # Shared helper for finding the latest output/last_search file per group
+├── output/            # Scraped data output (timestamped CSVs, JSON logs, .docx summaries)
+├── last_search/       # Baseline from the previous cycle, per store/group (git-ignored)
+├── package.json       # Project dependencies and scripts
+└── README.md          # Project documentation
 ```
 
 ## References

@@ -11,14 +11,19 @@
     "scrape-ios-group3": "node store-scraper.js --store=appstore --group=3",
     "scrape-android-group1": "node store-scraper.js --store=gpstore --group=1",
     "scrape-android-group2": "node store-scraper.js --store=gpstore --group=2",
-    "scrape-android-group3": "node store-scraper.js --store=gpstore --group=3"
+    "scrape-android-group3": "node store-scraper.js --store=gpstore --group=3",
+    "refine": "node refine.js",
+    "promote": "node promote.js",
+    "merge-log": "node merge-log.js"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "app-store-scraper": "^0.18.0",
+    "csv-parse": "^7.0.1",
     "csv-writer": "^1.6.0",
+    "docx": "^9.7.1",
     "google-play-scraper": "^10.1.2",
     "minimist": "^1.2.8"
   }

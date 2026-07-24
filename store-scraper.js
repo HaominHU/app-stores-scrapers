@@ -3,14 +3,12 @@ import minimist from 'minimist';
 import appstore from 'app-store-scraper';
 import gplay from "google-play-scraper";
 import { createObjectCsvWriter } from 'csv-writer';
+import { TOPIC, headerFor, filePrefixFor, isValidStore, isValidGroup } from './csv-schema.js';
 
 const args = minimist(process.argv.slice(2));
 
 const MAX_RETRIES = 2;
 const MAX_HITS_PER_SEARCH = 200;
-
-// topic placeholder for file output
-const topic = "hart_semi_annual_search";
 
 // HART semi-annual search, keywords 1-14 split into 3 manually-run groups
 const KEYWORD_GROUPS = {
@@ -19,70 +17,26 @@ const KEYWORD_GROUPS = {
     3: ["Senior Nutrition", "Malnutrition", "Memory games", "Care Coordination"],
 };
 
-const APPSTORE_HEADER = [
-    { id: 'id', title: 'ID' },
-    { id: 'appId', title: 'App ID' },
-    { id: 'title', title: 'Title' },
-    { id: 'url', title: 'URL' },
-    { id: 'description', title: 'Description' },
-    { id: 'genres', title: 'Genres' },
-    { id: 'contentRating', title: 'Content Rating' },
-    { id: 'languages', title: 'Languages' },
-    { id: 'size', title: 'Size' },
-    { id: 'released', title: 'Released' },
-    { id: 'updated', title: 'Updated' },
-    { id: 'releaseNotes', title: 'Release Notes' },
-    { id: 'requiredOsVersion', title: 'Required OS Version' },
-    { id: 'version', title: 'Version' },
-    { id: 'price', title: 'Price' },
-    { id: 'currency', title: 'Currency' },
-    { id: 'developer', title: 'Developer' },
-    { id: 'developerUrl', title: 'Developer URL' },
-    { id: 'developerWebsite', title: 'Developer Website' },
-    { id: 'score', title: 'Score' },
-    { id: 'reviews', title: 'Reviews' }
-];
-
-const GPSTORE_HEADER = [
-    { id: 'appId', title: 'ID' },
-    { id: 'title', title: 'Title' },
-    { id: 'url', title: 'URL' },
-    { id: 'description', title: 'Description' },
-    { id: 'genres', title: 'Genres' },
-    { id: 'contentRating', title: 'Content Rating' },
-    { id: 'released', title: 'Released' },
-    { id: 'updated', title: 'Updated' },
-    { id: 'recentChanges', title: 'Release Notes' },
-    { id: 'androidMaxVersion', title: 'androidMaxVersion' },
-    { id: 'version', title: 'Version' },
-    { id: 'price', title: 'Price' },
-    { id: 'currency', title: 'Currency' },
-    { id: 'developer', title: 'Developer' },
-    { id: 'developerWebsite', title: 'Developer Website' },
-    { id: 'score', title: 'Score' },
-    { id: 'reviews', title: 'Reviews' },
-];
-
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const store = args.store;
 const group = Number(args.group);
 
-if (store !== 'appstore' && store !== 'gpstore') {
+if (!isValidStore(store)) {
     console.error("Please specify a valid store: --store=appstore or --store=gpstore.");
     process.exit(1);
 }
 
-if (!KEYWORD_GROUPS[group]) {
+if (!isValidGroup(group)) {
     console.error("Please specify a valid group: --group=1, --group=2, or --group=3.");
     process.exit(1);
 }
 
 const keywords = KEYWORD_GROUPS[group];
 const timestamp = Date.now();
-const filePrefix = store === 'appstore' ? 'app_store_apps' : 'google_play_apps';
-const csvPath = `./output/${filePrefix}_${topic}_group${group}_${timestamp}.csv`;
-const logPath = `./output/${filePrefix}_${topic}_group${group}_${timestamp}_log.json`;
+const filePrefix = filePrefixFor(store);
+const csvPath = `./output/${filePrefix}_${TOPIC}_group${group}_${timestamp}.csv`;
+const logPath = `./output/${filePrefix}_${TOPIC}_group${group}_${timestamp}_log.json`;
 
 const totalRecords = {};
 const duplicateRecords = {};
@@ -90,7 +44,7 @@ const seenAppIds = new Set();
 
 const csvWriterInstance = createObjectCsvWriter({
     path: csvPath,
-    header: store === 'appstore' ? APPSTORE_HEADER : GPSTORE_HEADER,
+    header: headerFor(store),
 });
 
 function writeLog() {
