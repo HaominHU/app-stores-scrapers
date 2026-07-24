@@ -54,12 +54,30 @@ function writeLog() {
         generatedAt: timestamp,
         keywords: keywords.map(keyword => ({
             keyword,
-            totalFetched: totalRecords[keyword] ?? 0,
-            duplicates: duplicateRecords[keyword] ?? 0,
+            totalFetched: totalRecords[keyword],
+            duplicates: duplicateRecords[keyword],
         })),
     };
     writeFileSync(logPath, JSON.stringify(log, null, 2));
     console.info(`Log saved to '${logPath}'`);
+}
+
+// A search call can return an empty array without throwing (this happened with
+// google-play-scraper@10.1.2's search() — see AGENTS_LOG.md), which looks identical to a
+// genuine zero-result keyword unless flagged explicitly. Failure after all retries is
+// recorded as 'FAILED' rather than left undefined/0, so it isn't mistaken for either case.
+function recordKeywordOutcome(keyword, { success, apps = [], duplicateCount = 0 }) {
+    if (!success) {
+        console.error(`Keyword '${keyword}' failed after ${MAX_RETRIES} attempts — recording as FAILED.`);
+        totalRecords[keyword] = 'FAILED';
+        duplicateRecords[keyword] = 'FAILED';
+        return;
+    }
+    totalRecords[keyword] = apps.length;
+    duplicateRecords[keyword] = duplicateCount;
+    if (apps.length === 0) {
+        console.warn(`WARNING: keyword '${keyword}' returned 0 apps. This can indicate an API/library issue rather than a genuinely empty result — verify manually before trusting it.`);
+    }
 }
 
 async function scrapeAppstore() {
@@ -119,8 +137,7 @@ async function scrapeAppstore() {
                         console.log(`App '${appId}' already processed. Skipping...`);
                     }
                 }
-                totalRecords[keyword] = apps.length;
-                duplicateRecords[keyword] = duplicateCount;
+                recordKeywordOutcome(keyword, { success: true, apps, duplicateCount });
                 success = true;
             } catch (error) {
                 retries += 1;
@@ -129,6 +146,9 @@ async function scrapeAppstore() {
                     console.error(`Max retries reached for keyword '${keyword}'. Skipping...`);
                 }
             }
+        }
+        if (!success) {
+            recordKeywordOutcome(keyword, { success: false });
         }
     }
 
@@ -193,8 +213,7 @@ async function scrapeGPstore() {
                         console.log(`App '${appId}' already processed. Skipping...`);
                     }
                 }
-                totalRecords[keyword] = apps.length;
-                duplicateRecords[keyword] = duplicateCount;
+                recordKeywordOutcome(keyword, { success: true, apps, duplicateCount });
                 success = true;
             } catch (error) {
                 retries += 1;
@@ -203,6 +222,9 @@ async function scrapeGPstore() {
                     console.error(`Max retries reached for keyword '${keyword}'. Skipping...`);
                 }
             }
+        }
+        if (!success) {
+            recordKeywordOutcome(keyword, { success: false });
         }
     }
 
