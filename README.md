@@ -47,27 +47,32 @@ npm install
 
 ## Usage
 
-The scraper provides separate commands for each platform:
+The 14 HART semi-annual search keywords are split into 3 fixed groups (keys 1-5, 6-10,
+11-14). Each group is run as a separate command, one at a time per store, to avoid
+triggering rate-limiting/blocking on a home network. Run each command, review the
+output, then move on to the next group.
 
 ### Scrape iOS Apps
 
 ```bash
-npm run scrape-ios
+npm run scrape-ios-group1
+npm run scrape-ios-group2
+npm run scrape-ios-group3
 ```
 
 ### Scrape Android Apps
 
 ```bash
-npm run scrape-android
+npm run scrape-android-group1
+npm run scrape-android-group2
+npm run scrape-android-group3
 ```
 
-### Running Both
-
-You can run both scrapers sequentially:
-
-```bash
-npm run scrape-ios && npm run scrape-android
-```
+Each run writes two files to `output/`, named
+`<store>_apps_hart_semi_annual_search_group<N>_<timestamp>.csv` and the matching
+`..._log.json`:
+- the CSV holds the scraped app records
+- the JSON log holds the per-keyword fetch/duplicate counts for that group
 
 ## Important Notes
 

@@ -6,8 +6,12 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "scrape-ios": "node store-scraper.js --store=appstore",
-    "scrape-android": "node store-scraper.js --store=gpstore"
+    "scrape-ios-group1": "node store-scraper.js --store=appstore --group=1",
+    "scrape-ios-group2": "node store-scraper.js --store=appstore --group=2",
+    "scrape-ios-group3": "node store-scraper.js --store=appstore --group=3",
+    "scrape-android-group1": "node store-scraper.js --store=gpstore --group=1",
+    "scrape-android-group2": "node store-scraper.js --store=gpstore --group=2",
+    "scrape-android-group3": "node store-scraper.js --store=gpstore --group=3"
   },
   "keywords": [],
   "author": "",

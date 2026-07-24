@@ -1,3 +1,4 @@
+import { writeFileSync } from 'fs';
 import minimist from 'minimist';
 import appstore from 'app-store-scraper';
 import gplay from "google-play-scraper";
@@ -5,107 +6,110 @@ import { createObjectCsvWriter } from 'csv-writer';
 
 const args = minimist(process.argv.slice(2));
 
-let appstoreList = [];
-let gpstoreList = [];
-let appstoreTotalRecords = {};
-let gpstoreTotalRecords = {};
-let appstoreDuplicateRecords = {};
-let gpstoreDuplicateRecords = {};
-let seenAppIds = new Set();
-let androidSeenAppIds = new Set();
-
 const MAX_RETRIES = 2;
 const MAX_HITS_PER_SEARCH = 200;
 
 // topic placeholder for file output
 const topic = "hart_semi_annual_search";
-// const topic = "med_app_search";
 
-// keywords placeholder for search
-const keywords = [
-    /*HART semi-annual search*/
-    // "Aging",
-    // "Alzheimers",
-    // "Cognitive Stimulation",
-    // "Dementia Caregiver",
-    // "Dementia",
-    // "Healthy Aging",
-    // "Healthy Brain",
-    // "Medication Management",
-    // "Behavior tracking",
-    // "Symptom Tracking",
-    "Senior Nutrition",
-    "Malnutrition",
-    "Memory games",
-    "Care Coordination"
+// HART semi-annual search, keywords 1-14 split into 3 manually-run groups
+const KEYWORD_GROUPS = {
+    1: ["Aging", "Alzheimers", "Cognitive Stimulation", "Dementia Caregiver", "Dementia"],
+    2: ["Healthy Aging", "Healthy Brain", "Medication Management", "Behavior tracking", "Symptom Tracking"],
+    3: ["Senior Nutrition", "Malnutrition", "Memory games", "Care Coordination"],
+};
 
-    /* Medication Management App terms*/
-    // *"medication health monitor",
-    // *"medication management",
-    // *"pill reminder",
-    // *"medication helper"
+const APPSTORE_HEADER = [
+    { id: 'id', title: 'ID' },
+    { id: 'appId', title: 'App ID' },
+    { id: 'title', title: 'Title' },
+    { id: 'url', title: 'URL' },
+    { id: 'description', title: 'Description' },
+    { id: 'genres', title: 'Genres' },
+    { id: 'contentRating', title: 'Content Rating' },
+    { id: 'languages', title: 'Languages' },
+    { id: 'size', title: 'Size' },
+    { id: 'released', title: 'Released' },
+    { id: 'updated', title: 'Updated' },
+    { id: 'releaseNotes', title: 'Release Notes' },
+    { id: 'requiredOsVersion', title: 'Required OS Version' },
+    { id: 'version', title: 'Version' },
+    { id: 'price', title: 'Price' },
+    { id: 'currency', title: 'Currency' },
+    { id: 'developer', title: 'Developer' },
+    { id: 'developerUrl', title: 'Developer URL' },
+    { id: 'developerWebsite', title: 'Developer Website' },
+    { id: 'score', title: 'Score' },
+    { id: 'reviews', title: 'Reviews' }
+];
 
+const GPSTORE_HEADER = [
+    { id: 'appId', title: 'ID' },
+    { id: 'title', title: 'Title' },
+    { id: 'url', title: 'URL' },
+    { id: 'description', title: 'Description' },
+    { id: 'genres', title: 'Genres' },
+    { id: 'contentRating', title: 'Content Rating' },
+    { id: 'released', title: 'Released' },
+    { id: 'updated', title: 'Updated' },
+    { id: 'recentChanges', title: 'Release Notes' },
+    { id: 'androidMaxVersion', title: 'androidMaxVersion' },
+    { id: 'version', title: 'Version' },
+    { id: 'price', title: 'Price' },
+    { id: 'currency', title: 'Currency' },
+    { id: 'developer', title: 'Developer' },
+    { id: 'developerWebsite', title: 'Developer Website' },
+    { id: 'score', title: 'Score' },
+    { id: 'reviews', title: 'Reviews' },
 ];
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const csvWriter = createObjectCsvWriter;
-const csvWriterInstance = csvWriter({
-    // path: './output/app_store_apps.csv',
-    //output with timestamp and topic
-    path: `./output/app_store_apps_${topic}_${Date.now()}.csv`,
-    header: [
-        { id: 'id', title: 'ID' },
-        { id: 'appId', title: 'App ID' },
-        { id: 'title', title: 'Title' },
-        { id: 'url', title: 'URL' },
-        { id: 'description', title: 'Description' },
-        { id: 'genres', title: 'Genres' },
-        { id: 'contentRating', title: 'Content Rating' },
-        { id: 'languages', title: 'Languages' },
-        { id: 'size', title: 'Size' },
-        { id: 'released', title: 'Released' },
-        { id: 'updated', title: 'Updated' },
-        { id: 'releaseNotes', title: 'Release Notes' },
-        { id: 'requiredOsVersion', title: 'Required OS Version' },
-        { id: 'version', title: 'Version' },
-        { id: 'price', title: 'Price' },
-        { id: 'currency', title: 'Currency' },
-        { id: 'developer', title: 'Developer' },
-        { id: 'developerUrl', title: 'Developer URL' },
-        { id: 'developerWebsite', title: 'Developer Website' },
-        { id: 'score', title: 'Score' },
-        { id: 'reviews', title: 'Reviews' }
-    ]
+const store = args.store;
+const group = Number(args.group);
+
+if (store !== 'appstore' && store !== 'gpstore') {
+    console.error("Please specify a valid store: --store=appstore or --store=gpstore.");
+    process.exit(1);
+}
+
+if (!KEYWORD_GROUPS[group]) {
+    console.error("Please specify a valid group: --group=1, --group=2, or --group=3.");
+    process.exit(1);
+}
+
+const keywords = KEYWORD_GROUPS[group];
+const timestamp = Date.now();
+const filePrefix = store === 'appstore' ? 'app_store_apps' : 'google_play_apps';
+const csvPath = `./output/${filePrefix}_${topic}_group${group}_${timestamp}.csv`;
+const logPath = `./output/${filePrefix}_${topic}_group${group}_${timestamp}_log.json`;
+
+const totalRecords = {};
+const duplicateRecords = {};
+const seenAppIds = new Set();
+
+const csvWriterInstance = createObjectCsvWriter({
+    path: csvPath,
+    header: store === 'appstore' ? APPSTORE_HEADER : GPSTORE_HEADER,
 });
 
-const gpstoreCSVWriterInstance = csvWriter({
-    // path: './output/google_play_apps.csv',
-    path: `./output/google_play_apps_${topic}_${Date.now()}.csv`,
-    header: [
-        { id: 'appId', title: 'ID' },
-        { id: 'title', title: 'Title' },
-        { id: 'url', title: 'URL' },
-        { id: 'description', title: 'Description' },
-        { id: 'genres', title: 'Genres' },
-        { id: 'contentRating', title: 'Content Rating' },
-        { id: 'released', title: 'Released' },
-        { id: 'updated', title: 'Updated' },
-        { id: 'recentChanges', title: 'Release Notes' },
-        { id: 'androidMaxVersion', title: 'androidMaxVersion' },
-        { id: 'version', title: 'Version' },
-        { id: 'price', title: 'Price' },
-        { id: 'currency', title: 'Currency' },
-        { id: 'developer', title: 'Developer' },
-        { id: 'developerWebsite', title: 'Developer Website' },
-        { id: 'score', title: 'Score' },
-        { id: 'reviews', title: 'Reviews' },
-    ]
-});
-
-const store = args.store || 'appstore';
+function writeLog() {
+    const log = {
+        store,
+        group,
+        generatedAt: timestamp,
+        keywords: keywords.map(keyword => ({
+            keyword,
+            totalFetched: totalRecords[keyword] ?? 0,
+            duplicates: duplicateRecords[keyword] ?? 0,
+        })),
+    };
+    writeFileSync(logPath, JSON.stringify(log, null, 2));
+    console.info(`Log saved to '${logPath}'`);
+}
 
 async function scrapeAppstore() {
+    const resultList = [];
     for (const keyword of keywords) {
         let retries = 0;
         let success = false;
@@ -129,7 +133,7 @@ async function scrapeAppstore() {
                         try {
                             const appDetails = await appstore.app({ id: appId, country: 'us', lang: 'en' });
                             console.log(`App details for '${appId}':`, appDetails);
-                            const result = {
+                            resultList.push({
                                 id: appDetails.id,
                                 appId: appDetails.appId,
                                 title: appDetails.title,
@@ -152,10 +156,7 @@ async function scrapeAppstore() {
                                 score: appDetails.score,
                                 reviews: appDetails.reviews,
                                 supportedDevices: appDetails.supportedDevices
-                            };
-
-                            // TODO: upload to the HART backend
-                            appstoreList.push(result);
+                            });
                         } catch (error) {
                             console.error(`Error fetching details for app '${appId}':`, error);
                         }
@@ -164,8 +165,8 @@ async function scrapeAppstore() {
                         console.log(`App '${appId}' already processed. Skipping...`);
                     }
                 }
-                appstoreTotalRecords[keyword] = apps.length;
-                appstoreDuplicateRecords[keyword] = duplicateCount;
+                totalRecords[keyword] = apps.length;
+                duplicateRecords[keyword] = duplicateCount;
                 success = true;
             } catch (error) {
                 retries += 1;
@@ -178,14 +179,16 @@ async function scrapeAppstore() {
     }
 
     for (const keyword of keywords) {
-        console.info(`Total initial apps fetched for keyword '${keyword}': ${appstoreTotalRecords[keyword]}`);
-        console.info(`Total duplicate apps with the same appID skipped: ${appstoreDuplicateRecords[keyword]} with keyword '${keyword}'`);
+        console.info(`Total initial apps fetched for keyword '${keyword}': ${totalRecords[keyword]}`);
+        console.info(`Total duplicate apps with the same appID skipped: ${duplicateRecords[keyword]} with keyword '${keyword}'`);
     }
-    await csvWriterInstance.writeRecords(appstoreList);
-    console.info("Results saved to 'app_store_apps.csv'");
+    await csvWriterInstance.writeRecords(resultList);
+    console.info(`Results saved to '${csvPath}'`);
+    writeLog();
 }
 
 async function scrapeGPstore() {
+    const resultList = [];
     for (const keyword of keywords) {
         let retries = 0;
         let success = false;
@@ -204,12 +207,12 @@ async function scrapeGPstore() {
 
                 for (const appInfo of apps) {
                     const appId = appInfo.appId;
-                    if (!androidSeenAppIds.has(appId)) {
-                        androidSeenAppIds.add(appId);
+                    if (!seenAppIds.has(appId)) {
+                        seenAppIds.add(appId);
                         try {
-                            const appDetails = await gplay.app({appId: appId});
+                            const appDetails = await gplay.app({ appId: appId });
 
-                            const result = {
+                            resultList.push({
                                 appId: appDetails.appId,
                                 title: appDetails.title,
                                 url: appDetails.url,
@@ -227,10 +230,7 @@ async function scrapeGPstore() {
                                 developerWebsite: appDetails.developerWebsite,
                                 score: appDetails.score,
                                 reviews: appDetails.reviews,
-                            };
-
-                            // TODO: upload to the HART backend
-                            gpstoreList.push(result);
+                            });
                         } catch (error) {
                             console.error(`Error fetching details for app '${appId}':`, error);
                         }
@@ -239,8 +239,8 @@ async function scrapeGPstore() {
                         console.log(`App '${appId}' already processed. Skipping...`);
                     }
                 }
-                gpstoreTotalRecords[keyword] = apps.length;
-                gpstoreDuplicateRecords[keyword] = duplicateCount;
+                totalRecords[keyword] = apps.length;
+                duplicateRecords[keyword] = duplicateCount;
                 success = true;
             } catch (error) {
                 retries += 1;
@@ -253,21 +253,15 @@ async function scrapeGPstore() {
     }
 
     for (const keyword of keywords) {
-        console.info(`Total initial apps fetched for keyword '${keyword}': ${gpstoreTotalRecords[keyword]}`);
-        console.info(`Total duplicate apps with the same appID skipped: ${gpstoreDuplicateRecords[keyword]} with keyword '${keyword}'`);
+        console.info(`Total initial apps fetched for keyword '${keyword}': ${totalRecords[keyword]}`);
+        console.info(`Total duplicate apps with the same appID skipped: ${duplicateRecords[keyword]} with keyword '${keyword}'`);
     }
-    await gpstoreCSVWriterInstance.writeRecords(gpstoreList);
-    console.info("Results saved to 'gp_store_apps.csv'");
+    await csvWriterInstance.writeRecords(resultList);
+    console.info(`Results saved to '${csvPath}'`);
+    writeLog();
 }
 
-
-
-if (!store || (store !== 'appstore' && store !== 'gpstore')) {
-    console.error("Please specify a valid store (appstore or gpstore).");
-    process.exit(1);
-}
-
-if (store == 'appstore') {
+if (store === 'appstore') {
     scrapeAppstore().catch(console.error);
 } else {
     scrapeGPstore().catch(console.error);
