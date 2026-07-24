@@ -23,24 +23,27 @@ hand from copy-pasted terminal output.
 - `last_search/` files renamed to the same `group<N>` convention — **done**. App Store
   group 1 has no last_search baseline (old `.xlsx` file was removed by the user); its next
   `refine` run will treat everything as new.
-- **`refine.js`** (not built yet): `npm run refine -- --store=<store> --group=<N>`, run
-  manually whenever ready. Diffs this cycle's raw CSV in `output/` against the matching
+- **`refine.js`**: `npm run refine -- --store=<store> --group=<N>`, run manually whenever
+  ready. Diffs this cycle's raw CSV in `output/` against the matching
   `last_search/..._group<N>...csv` by `appId`, writes `..._new_only.csv`. Raw CSV is left
   untouched.
-- **`promote.js`** (not built yet): `npm run promote -- --store=<store> --group=<N>`, run
-  manually whenever ready. New `last_search` file = union of (old `last_search` rows) +
-  (this cycle's new rows), deduplicated by `appId`. Replaces the old `last_search` file for
-  that store+group. (Union with raw output and union with refine's `_new_only.csv` produce
-  the identical result — `_new_only` is by definition raw minus old.)
-- **`merge-log.js`** (not built yet): `npm run merge-log -- --store=<store>`, run manually
-  once after all 3 groups for a store are scraped/refined. Reads the 3 `..._log.json`
-  sidecars in `output/`; requires exactly groups 1, 2, 3 present (errors naming what's
-  missing, doesn't produce a partial doc); if a group has two log files (a re-run), auto-picks
-  the newest by timestamp. Flattens to one `[1]`-`[14]` numbered list in group order, writes
+- **`promote.js`**: `npm run promote -- --store=<store> --group=<N>`, run manually whenever
+  ready. New `last_search` file = union of (old `last_search` rows) + (this cycle's new
+  rows), deduplicated by `appId`. Replaces the old `last_search` file for that store+group.
+  (Union with raw output and union with refine's `_new_only.csv` produce the identical
+  result — `_new_only` is by definition raw minus old.)
+- **`merge-log.js`**: `npm run merge-log -- --store=<store>`, run manually once after all 3
+  groups for a store are scraped/refined. Reads the 3 `..._log.json` sidecars in `output/`;
+  requires exactly groups 1, 2, 3 present (errors naming what's missing, doesn't produce a
+  partial doc); if a group has two log files (a re-run), auto-picks the newest by
+  timestamp. Flattens to one `[1]`-`[14]` numbered list in group order, writes
   `app_store_results_log.docx` / `google_play_results_log.docx` matching the user's exact
   sample format (store name heading, then per keyword: `Total initial apps fetched for
   keyword 'X': Y` / `Total duplicate apps with the same appID skipped: Z with keyword 'X'`).
-- New deps needed: `csv-parse` (reading last_search/output CSVs safely — descriptions
+- `csv-schema.js` / `file-lookup.js`: shared modules factored out to avoid duplicating the
+  CSV header definitions and the "find latest file for this store+group" logic across
+  `store-scraper.js`, `refine.js`, `promote.js`, and `merge-log.js`.
+- New deps added: `csv-parse` (reading last_search/output CSVs safely — descriptions
   contain commas/quotes) and `docx` (generating the Word file).
 - Stack: JS/Node only, no Python — every operation here is simple set/array work on
   ≤200-row files, not worth a second toolchain.
@@ -51,14 +54,23 @@ hand from copy-pasted terminal output.
 
 - [x] **Batch A** — `--group` flag + codified keyword groups, JSON log sidecar, new
       filename convention, `package.json`/README updates, `.gitignore` for `output/` and
-      `last_search/`. Done in the working tree. **Not yet committed** — awaiting the user's
-      commit/push decision.
-- [ ] **Batch B** — `refine.js`
-- [ ] **Batch C** — `promote.js`
-- [ ] **Batch D** — `merge-log.js`
+      `last_search/`. **Committed** (`6e4ca91`).
+- [x] **process fix** — `TODO.md` + `AGENTS.md`/`AGENTS_LOG.md` rules. **Committed**
+      (`0826491`).
+- [x] **Batch B** — `refine.js`. Implemented, verified end-to-end against fixture data
+      (isolated temp dir, not the real `output/`/`last_search/`). Not yet committed.
+- [x] **Batch C** — `promote.js`. Implemented, verified end-to-end against fixture data.
+      Not yet committed.
+- [x] **Batch D** — `merge-log.js`. Implemented, verified end-to-end against fixture data —
+      confirmed correct paragraph/blank-line structure and exact keyword numbering/content
+      by unzipping the generated `.docx` and inspecting `word/document.xml`. Not yet
+      committed.
+
+All 4 batches are implemented and pass fixture-based verification. **Not yet verified
+against a real scrape** (live App Store/Play Store calls weren't triggered — those take
+minutes per group and were out of scope for automated verification).
 
 ### Immediate next step
 
-Ask the user whether to commit/push Batch A (and this TODO.md/AGENTS.md process update) now,
-or hold for review — then, once resolved, state a TODO for Batch B (`refine.js`) and wait
-for confirmation before implementing, per the workflow rule.
+Awaiting the user's commit/push decision for Batches B/C/D, and their own real-world test
+run (`npm run scrape-ios-group1` → `refine` → `promote`, then all 3 groups → `merge-log`).

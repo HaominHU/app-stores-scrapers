@@ -78,4 +78,48 @@ agent had been relying on conversation history alone to track the multi-batch pl
 those features and had not been updating this log — a real risk if the session were
 interrupted or handed to a different agent, per user's explicit concern.
 
-**Commit/push:** not yet committed — pending user confirmation.
+**Commit/push:** committed as two separate commits, per user confirmation — group-based
+scraping (`6e4ca91`) and the TODO.md/AGENTS.md process fix (`0826491`). Not yet pushed.
+
+---
+
+## 2026-07-24 — refine.js, promote.js, merge-log.js
+
+**What:**
+- `csv-schema.js` (new): shared module holding the App Store/Google Play CSV header
+  definitions, filename-prefix helpers, and store/group validators — extracted from
+  `store-scraper.js` so `refine.js`/`promote.js`/`merge-log.js` don't duplicate them.
+  `store-scraper.js` now imports from it instead of defining its own copies.
+- `file-lookup.js` (new): shared helper to find the latest `output/`/`last_search/` file for
+  a given store+group+suffix (raw CSV, `_new_only.csv`, or `_log.json`), sorted by the
+  timestamp embedded in the filename.
+- `refine.js` (new): `npm run refine -- --store=<store> --group=<N>`. Diffs the latest raw
+  output CSV against the matching `last_search` baseline by app ID, writes `..._new_only.csv`
+  with apps not already in `last_search`. No baseline found ⇒ treats everything as new
+  (matches App Store group 1's current state).
+- `promote.js` (new): `npm run promote -- --store=<store> --group=<N>`. New `last_search`
+  baseline = union of the old baseline and this cycle's raw output, deduplicated by app ID;
+  replaces the old baseline file for that store+group.
+- `merge-log.js` (new): `npm run merge-log -- --store=<store>`. Combines the 3 groups'
+  `..._log.json` sidecars into one `.docx` (via the `docx` package) matching the user's exact
+  sample format — numbered `[1]`-`[14]`, store name heading, blank line between each fetched/
+  duplicate line. Errors if any of groups 1/2/3 is missing; auto-picks the newest timestamp if
+  a group has two log files.
+- Added `csv-parse` and `docx` as dependencies.
+- `package.json`/`README.md`: added `refine`/`promote`/`merge-log` npm scripts and documented
+  the full scrape → refine → promote → merge-log workflow in the Usage section, per the
+  standing reproducibility rule.
+- Verified all three scripts end-to-end against fixture CSVs/JSON logs in an isolated temp
+  directory (not the real `output/`/`last_search/`): `refine` correctly filtered 1 new app out
+  of 3, `promote` correctly unioned old+new into a 3-app baseline and removed the stale
+  baseline file, and `merge-log`'s generated `.docx` was unzipped and its `document.xml`
+  inspected directly — exact keyword text/order/numbers matched, and paragraph count (57 = 1
+  heading + 14 keywords × 4 paragraphs) confirmed the blank-line spacing is correct.
+
+**Why:** completes the pipeline the user needs to (1) exclude apps already reported in a
+prior half-year cycle from a new cycle's results, and (2) stop manually copy-pasting
+per-keyword terminal output into a Word doc. Design fully negotiated in conversation and
+recorded in `TODO.md` before this batch started.
+
+**Commit/push:** not yet committed — pending user confirmation. Not yet tested against a
+real scrape (only fixture data) — user's next step is to run it for real.
