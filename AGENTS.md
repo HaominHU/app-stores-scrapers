@@ -13,8 +13,15 @@ mHealth app-market scraper for the HART project (App Store + Google Play, via
 
 Follow, in this order of specificity:
 
-1. **This repo's conventions** — read existing code before writing new code. There's only
-   one source file (`store-scraper.js`); match its style.
+1. **This repo's conventions** — read existing code before writing new code, including
+   patterns established earlier in the same project by a previous batch or session, not
+   just what predates any agent's involvement. When building multiple similar things (CLI
+   scripts, functions, modules) as part of one feature, keep their interface/pattern
+   consistent with each other — don't let one get baked-in convenience and another stay
+   flag-based without a reason. If a deviation is genuinely warranted, flag it as a decision
+   and say why, rather than letting it happen silently. This is a solo-dev project: an
+   inconsistency the user has to notice and ask about reads as confusing or arbitrary on a
+   later look-back, not as an intentional choice.
 2. **`karpathy-12rule.md`** (in repo root) and the installed `karpathy-guidelines` plugin
    skill — read-before-write, think-before-code, state assumptions and tradeoffs instead of
    silently guessing, minimum code that solves the actual problem, no premature abstraction.
